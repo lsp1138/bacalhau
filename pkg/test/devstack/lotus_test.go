@@ -41,7 +41,7 @@ func (s *lotusNodeSuite) TestLotusNode() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	log.Logger = log.Logger.Output(zerolog.NewTestWriter(s.T()))
+	log.Logger = log.Logger.Output(zerolog.NewTestWriter(s.T())).With().Str("marker", "str").Logger()
 	zerolog.DefaultContextLogger = &log.Logger
 
 	testCase := scenario.CatFileToStdout()
