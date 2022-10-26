@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,13 +67,16 @@ func (l *LotusNode) start(ctx context.Context) error {
 	ctx, span := system.GetTracer().Start(ctx, "pkg/devstack.start")
 	defer span.End()
 
-	uploadDir, err := ioutil.TempDir("", "bacalhau-lotus-upload-dir")
+	uploadDir, err := os.MkdirTemp("", "bacalhau-lotus-upload-dir")
 	if err != nil {
+		return err
+	}
+	if err := os.Chmod(uploadDir, util.OS_USER_RWX|util.OS_GROUP_RW|util.OS_ALL_RW); err != nil {
 		return err
 	}
 	l.UploadDir = uploadDir
 
-	pathDir, err := ioutil.TempDir("", "bacalhau-lotus-path-dir")
+	pathDir, err := os.MkdirTemp("", "bacalhau-lotus-path-dir")
 	if err != nil {
 		return err
 	}

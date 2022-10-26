@@ -156,6 +156,11 @@ func (l *Publisher) carResultsDir(ctx context.Context, resultsDir string) (strin
 	}
 	tempFile := filepath.Join(tempDir, "results.car")
 
+	//tempFile, err := os.CreateTemp(l.config.UploadDir, "results-*.car")
+	//if err != nil {
+	//	return "", err
+	//}
+
 	if _, err := car.CreateCar(ctx, resultsDir, tempFile, 1); err != nil {
 		return "", err
 	}
