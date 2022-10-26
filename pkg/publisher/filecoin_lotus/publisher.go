@@ -97,15 +97,23 @@ func (l *Publisher) PublishShardResult(
 		Str("shardResultPath", shardResultPath).
 		Msg("Uploading results folder to filecoin lotus")
 
-	tarFile, err := l.carResultsDir(ctx, shardResultPath)
+	carFile, err := l.carResultsDir(ctx, shardResultPath)
 	if err != nil {
 		return model.StorageSpec{}, err
 	}
 
-	contentCid, err := l.importData(ctx, tarFile)
+	log.Ctx(ctx).Debug().
+		Str("carFile", carFile).
+		Msg("carred")
+
+	contentCid, err := l.importData(ctx, carFile)
 	if err != nil {
 		return model.StorageSpec{}, err
 	}
+
+	log.Ctx(ctx).Debug().
+		Stringer("cid", contentCid).
+		Msg("cidded")
 
 	dealCid, err := l.createDeal(ctx, contentCid)
 	if err != nil {
