@@ -22,11 +22,9 @@ func TestTouchFSSuite(t *testing.T) {
 }
 
 func (suite *touchFsSuite) SetupTest() {
-	testDir, err := os.MkdirTemp("", "*")
-	require.NoError(suite.T(), err)
-	suite.testDir = testDir
+	suite.testDir = suite.T().TempDir()
 
-	file, err := os.Create(filepath.Join(testDir, "test.txt"))
+	file, err := os.Create(filepath.Join(suite.testDir, "test.txt"))
 	require.NoError(suite.T(), err)
 
 	_, err = file.WriteString("hello")

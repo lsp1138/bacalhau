@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/filecoin-project/bacalhau/pkg/logger"
+	filecoinlotus "github.com/filecoin-project/bacalhau/pkg/publisher/filecoin_lotus"
 
 	"github.com/filecoin-project/bacalhau/pkg/localdb/inmemory"
 
@@ -62,6 +64,10 @@ type ServeOptions struct {
 	LimitJobCPU                     string // The amount of CPU the system can be using at one time for a single job.
 	LimitJobMemory                  string // The amount of memory the system can be using at one time for a single job.
 	LimitJobGPU                     string // The amount of GPU the system can be using at one time for a single job.
+	LotusFilecoinStorageDuration    time.Duration
+	LotusFilecoinPathDirectory      string
+	LotusFilecoinUploadDirectory    string
+	LotusFilecoinMaximumPing        time.Duration
 }
 
 func NewServeOptions() *ServeOptions {
@@ -72,17 +78,19 @@ func NewServeOptions() *ServeOptions {
 		EstuaryAPIKey:                   os.Getenv("ESTUARY_API_KEY"),
 		HostAddress:                     "0.0.0.0",
 		SwarmPort:                       DefaultSwarmPort,
-		MetricsPort:                     2112,
 		JobSelectionDataLocality:        "local",
 		JobSelectionDataRejectStateless: false,
 		JobSelectionProbeHTTP:           "",
 		JobSelectionProbeExec:           "",
+		MetricsPort:                     2112,
 		LimitTotalCPU:                   "",
 		LimitTotalMemory:                "",
 		LimitTotalGPU:                   "",
 		LimitJobCPU:                     "",
 		LimitJobMemory:                  "",
 		LimitJobGPU:                     "",
+		LotusFilecoinPathDirectory:      os.Getenv("LOTUS_PATH"),
+		LotusFilecoinMaximumPing:        2 * time.Second,
 	}
 }
 
@@ -220,6 +228,22 @@ func init() { //nolint:gochecknoinits // Using init in cobra command is idomatic
 		&OS.MetricsPort, "metrics-port", OS.MetricsPort,
 		`The port to serve prometheus metrics on.`,
 	)
+	serveCmd.PersistentFlags().DurationVar(
+		&OS.LotusFilecoinStorageDuration, "lotus-storage-duration", OS.LotusFilecoinStorageDuration,
+		"Duration to store data in Lotus Filecoin for.",
+	)
+	serveCmd.PersistentFlags().StringVar(
+		&OS.LotusFilecoinPathDirectory, "lotus-path-directory", OS.LotusFilecoinPathDirectory,
+		"Location of the Lotus Filecoin configuration directory.",
+	)
+	serveCmd.PersistentFlags().StringVar(
+		&OS.LotusFilecoinUploadDirectory, "lotus-upload-directory", OS.LotusFilecoinUploadDirectory,
+		"Directory to use when uploading content to Lotus Filecoin.",
+	)
+	serveCmd.PersistentFlags().DurationVar(
+		&OS.LotusFilecoinMaximumPing, "lotus-max-ping", OS.LotusFilecoinMaximumPing,
+		"The highest ping a Filecoin miner could have when selecting.",
+	)
 
 	setupLibp2pCLIFlags(serveCmd)
 	setupJobSelectionCLIFlags(serveCmd)
@@ -295,6 +319,16 @@ var serveCmd = &cobra.Command{
 				CapacityManagerConfig: getCapacityManagerConfig(),
 			},
 			RequesterNodeConfig: requesternode.RequesterNodeConfig{},
+		}
+		if OS.LotusFilecoinStorageDuration != time.Duration(0) &&
+			OS.LotusFilecoinPathDirectory != "" &&
+			OS.LotusFilecoinMaximumPing != time.Duration(0) {
+			nodeConfig.LotusConfig = &filecoinlotus.PublisherConfig{
+				StorageDuration: OS.LotusFilecoinStorageDuration,
+				PathDir:         OS.LotusFilecoinPathDirectory,
+				UploadDir:       OS.LotusFilecoinUploadDirectory,
+				MaximumPing:     OS.LotusFilecoinMaximumPing,
+			}
 		}
 
 		// Create node
