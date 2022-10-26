@@ -71,7 +71,7 @@ func (l *LotusNode) start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Chmod(uploadDir, util.OS_USER_RWX|util.OS_GROUP_RW|util.OS_ALL_RW); err != nil {
+	if err := os.Chmod(uploadDir, util.OS_ALL_RWX); err != nil {
 		return err
 	}
 	l.UploadDir = uploadDir
