@@ -18,6 +18,8 @@ import (
 	"github.com/filecoin-project/bacalhau/pkg/publisher/filecoin_lotus/api"
 	"github.com/filecoin-project/bacalhau/pkg/system"
 	"github.com/filecoin-project/bacalhau/pkg/test/scenario"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -38,6 +40,9 @@ func (s *lotusNodeSuite) SetupTest() {
 func (s *lotusNodeSuite) TestLotusNode() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
+
+	log.Logger = log.Logger.Output(zerolog.NewTestWriter(s.T()))
+	zerolog.DefaultContextLogger = &log.Logger
 
 	testCase := scenario.CatFileToStdout()
 	nodeCount := 1
