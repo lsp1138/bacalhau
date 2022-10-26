@@ -80,4 +80,5 @@ The config lives in `.golangci.yml`
 
 ## Licence
 
+
 [Apache-2.0](./LICENSE)
