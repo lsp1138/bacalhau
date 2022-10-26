@@ -146,6 +146,10 @@ func (l *Publisher) carResultsDir(ctx context.Context, resultsDir string) (strin
 	ctx, span := system.GetTracer().Start(ctx, "pkg/publisher/filecoin_lotus/carResultsDir")
 	defer span.End()
 
+	if err := os.WriteFile(filepath.Join(l.config.UploadDir, "temp.txt"), []byte(`hello`), 0644); err != nil {
+		log.Ctx(ctx).Err(err).Msg("can't write to upload directory")
+		return "", fmt.Errorf("wrapped : %w", err)
+	}
 	tempDir, err := os.MkdirTemp(l.config.UploadDir, "bacalhau-filecoin-lotus-*")
 	if err != nil {
 		return "", err

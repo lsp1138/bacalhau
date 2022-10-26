@@ -283,7 +283,7 @@ check-diff:
 ################################################################################
 .PHONY: test-and-report
 test-and-report: ${BINARY_PATH}
-		LOG_LEVEL=debug gotestsum \
+		gotestsum \
 			--jsonfile ${TEST_OUTPUT_FILE_PREFIX}_unit.json \
 			--junitfile unittests.xml \
 			--format standard-quiet \
