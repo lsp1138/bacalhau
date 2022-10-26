@@ -71,9 +71,19 @@ func (l *LotusNode) start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Chmod(uploadDir, util.OS_ALL_RWX); err != nil {
+	if err := os.Chmod(uploadDir, util.OS_ALL_RWX); err != nil { //nolint:govet
 		return err
 	}
+
+	if f, err := os.Stat(uploadDir); err != nil {
+		return err
+	} else {
+		log.Ctx(ctx).Info().
+			Str("", f.Name()).
+			Bool("", f.IsDir()).
+			Msgf("findme: %#v", f.Sys()) // TODO
+	}
+
 	l.UploadDir = uploadDir
 
 	pathDir, err := os.MkdirTemp("", "bacalhau-lotus-path-dir")
