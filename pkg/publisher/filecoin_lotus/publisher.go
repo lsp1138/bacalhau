@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/filecoin-project/bacalhau/pkg/publisher"
 	"github.com/filecoin-project/bacalhau/pkg/publisher/filecoin_lotus/api"
 	"github.com/filecoin-project/bacalhau/pkg/publisher/filecoin_lotus/api/storagemarket"
+	"github.com/filecoin-project/bacalhau/pkg/storage/util"
 	"github.com/filecoin-project/bacalhau/pkg/system"
 	"github.com/filecoin-project/go-address"
 	big2 "github.com/filecoin-project/go-state-types/big"
@@ -146,26 +146,37 @@ func (l *Publisher) carResultsDir(ctx context.Context, resultsDir string) (strin
 	ctx, span := system.GetTracer().Start(ctx, "pkg/publisher/filecoin_lotus/carResultsDir")
 	defer span.End()
 
-	if err := os.WriteFile(filepath.Join(l.config.UploadDir, "temp.txt"), []byte(`hello`), 0644); err != nil { //nolint:gosec
-		log.Ctx(ctx).Err(err).Msg("can't write to upload directory")
-		return "", fmt.Errorf("wrapped : %w", err)
-	}
-	tempDir, err := os.MkdirTemp(l.config.UploadDir, "bacalhau-filecoin-lotus-*")
-	if err != nil {
-		return "", err
-	}
-	tempFile := filepath.Join(tempDir, "results.car")
-
-	//tempFile, err := os.CreateTemp(l.config.UploadDir, "results-*.car")
+	//if err := os.WriteFile(filepath.Join(l.config.UploadDir, "temp.txt"), []byte(`hello`), 0644); err != nil { //nolint:gomnd
+	//	log.Ctx(ctx).Err(err).Msg("can't write to upload directory")
+	//	return "", fmt.Errorf("wrapped : %w", err)
+	//}
+	//tempDir, err := os.MkdirTemp(l.config.UploadDir, "bacalhau-filecoin-lotus-*")
 	//if err != nil {
 	//	return "", err
 	//}
+	//tempFile := filepath.Join(tempDir, "results.car")
 
-	if _, err := car.CreateCar(ctx, resultsDir, tempFile, 1); err != nil {
+	tempFile, err := os.CreateTemp(l.config.UploadDir, "results-*.car")
+	if err != nil {
 		return "", err
 	}
 
-	return tempFile, nil
+	// Temporary files will have 0600 as their permissions, which could cause issues when sharing with a Lotus node
+	// running inside a container.
+	if err := tempFile.Chmod(util.OS_ALL_RW); err != nil { //nolint:govet
+		return "", err
+	}
+
+	// Just need the filename
+	if err := tempFile.Close(); err != nil {
+		return "", err
+	}
+
+	if _, err := car.CreateCar(ctx, resultsDir, tempFile.Name(), 1); err != nil {
+		return "", err
+	}
+
+	return tempFile.Name(), nil
 }
 
 func (l *Publisher) importData(ctx context.Context, filePath string) (cid.Cid, error) {
