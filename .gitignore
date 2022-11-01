@@ -42,3 +42,4 @@ unittests.xml
 output_dir
 experimental/*
 .idea/
+job-*
